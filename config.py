@@ -16,11 +16,11 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
 
     # MySQL database connection settings (Local MySQL)
-    DB_HOST = os.environ.get('DB_HOST') or 'localhost'
-    DB_USER = os.environ.get('DB_USER') or 'root'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'Shubham#1204'
-    DB_NAME = os.environ.get('DB_NAME') or 'bhagwat_db'
-    DB_PORT = int(os.environ.get('DB_PORT') or 3306)
+    DB_HOST = os.environ.get('DB_HOST', ''),
+    DB_USER = os.environ.get('DB_USER', ''),
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', ''),
+    DB_NAME = os.environ.get('DB_NAME', ''),
+    DB_PORT = int(os.environ.get('DB_PORT', ''),
 
     # Session configuration
     SESSION_TYPE = 'filesystem'
