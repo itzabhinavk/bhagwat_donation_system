@@ -38,11 +38,12 @@ def index():
         cursor = conn.cursor(dictionary=True)
 
         # --- Query Parameters ---
-        search = request.args.get('search', '').strip()
-        table_key = request.args.get('table', '').strip()
-        sort_by = request.args.get('sort', 'donated_at')
-        sort_order = request.args.get('order', 'desc')
-        page = int(request.args.get('page', 1))
+        search = str(request.args.get('search', '')).strip()
+        table_key = str(request.args.get('table', '')).strip()
+        sort_by = str(request.args.get('sort', 'donated_at'))
+        sort_order = str(request.args.get('order', 'desc'))
+        page_str = str(request.args.get('page', '1')).strip()
+        page = int(page_str) if page_str.isdigit() else 1
         per_page = 15  # Records per page
 
         tables = _fetch_table_metadata(conn)
