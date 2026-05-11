@@ -25,16 +25,16 @@ def create_admin():
     print("=" * 50)
 
     # Get admin credentials from user
-    username = input("\nEnter admin username (default: admin): ").strip()
+    username = str(input("\nEnter admin username (default: admin): ")).strip()
     if not username:
         username = "admin"
 
-    password = input("Enter admin password: ").strip()
+    password = str(input("Enter admin password: ")).strip()
     if not password:
         print("❌ Password cannot be empty!")
         return
 
-    confirm_password = input("Confirm password: ").strip()
+    confirm_password = str(input("Confirm password: ")).strip()
     if password != confirm_password:
         print("❌ Passwords do not match!")
         return
