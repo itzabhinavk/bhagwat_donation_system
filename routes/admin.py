@@ -7,13 +7,14 @@ from werkzeug.security import check_password_hash
 from datetime import datetime
 from database.db import get_db_connection
 from utils.helpers import login_required, generate_session_token
+import pymysql
 
 # Create Blueprint named 'admin'
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
 def _fetch_table_metadata(conn):
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute("SELECT table_key, title, description FROM donation_tables ORDER BY id")
     tables = cursor.fetchall()
     cursor.close()
@@ -62,7 +63,7 @@ def login():
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor(pymysql.cursors.DictCursor)
 
             # Find admin by username
             cursor.execute("SELECT * FROM admins WHERE username = %s", (username,))
@@ -134,8 +135,8 @@ def dashboard():
     table_key = request.args.get('table')
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
         tables = _fetch_table_metadata(conn)
         selected_table = _get_selected_table(table_key, tables)
 
@@ -300,7 +301,7 @@ def get_donation(table_key, donation_id):
         if not selected_table:
             return jsonify({'error': 'Invalid table selected'}), 404
 
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute(
             f"SELECT * FROM {selected_table['table_key']} WHERE id = %s",
             (donation_id,)
