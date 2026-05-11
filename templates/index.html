@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Bhagwat Donation Records - Live Tracker{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================
+     HERO BANNER
+============================================================ -->
+<div class="hero-banner">
+  <div class="hero-title">🙏 श्रीमद् भागवत महापुराण 🙏</div>
+  <p class="hero-subtitle">Donation Collection — Live Tracker</p>
+</div>
+
+<!-- ============================================================
+     MAIN CONTENT
+============================================================ -->
+<div class="container">
+
+  <!-- STATS CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Donations Collected</div>
+      <div class="stat-value"
+           data-count="{{ total_amount }}"
+           data-type="amount">
+        ₹0
+      </div>
+      <div class="stat-icon">💰</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Donors</div>
+      <div class="stat-value"
+           data-count="{{ total_records }}"
+           data-type="count">
+        0
+      </div>
+      <div class="stat-icon">🙏</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Latest Notice</div>
+      <div class="stat-value" style="font-size: 1rem; font-family: var(--font-body);">
+        {% if notices %}
+          {{ notices[0].title[:30] }}{% if notices[0].title|length > 30 %}...{% endif %}
+        {% else %}
+          No notices yet
+        {% endif %}
+      </div>
+      <div class="stat-icon">📢</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       DONATION TABLE SECTION
+  ============================================================ -->
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">{{ selected_table.title if selected_table else 'Donation Records' }}</h2>
+        {% if selected_table.description %}
+          <p class="table-description">{{ selected_table.description }}</p>
+        {% endif %}
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="icon">🔍</span>
+          <input
+            type="text"
+            class="search-input"
+            id="searchInput"
+            placeholder="Search donor, village, payment..."
+            value="{{ search }}"
+            aria-label="Search donations"
+          >
+        </div>
+        {% if search %}
+          <button class="btn btn-secondary btn-sm" id="clearSearch" title="Clear search">
+            ✕ Clear
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-tabs">
+      {% for table in tables %}
+        <a href="?table={{ table.table_key }}&search={{ search }}&sort={{ sort_by }}&order={{ sort_order }}"
+           class="table-tab {{ 'active' if selected_table and table.table_key == selected_table.table_key else '' }}">
+          {{ table.title }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="donor_name" class="{{ 'sorted' if sort_by == 'donor_name' }}">
+                Donor Name
+                <span class="sort-icon">
+                  {% if sort_by == 'donor_name' %}
+                    {{ '↑' if sort_order == 'asc' else '↓' }}
+                  {% else %}↕{% endif %}
+                </span>
+              </th>
+              <th data-sort="village" class="{{ 'sorted' if sort_by == 'village' }}">
+                Village
+                <span class="sort-icon">
+                  {% if sort_by == 'village' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% else %}↕{% endif %}
+                </span>
+              </th>
+              <th data-sort="amount" class="{{ 'sorted' if sort_by == 'amount' }}">
+                Amount
+                <span class="sort-icon">
+                  {% if sort_by == 'amount' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% else %}↕{% endif %}
+                </span>
+              </th>
+              <th data-sort="payment_method" class="{{ 'sorted' if sort_by == 'payment_method' }}">
+                Payment
+                <span class="sort-icon">
+                  {% if sort_by == 'payment_method' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% else %}↕{% endif %}
+                </span>
+              </th>
+              <th data-sort="payment_status" class="{{ 'sorted' if sort_by == 'payment_status' }}">
+                Status
+                <span class="sort-icon">
+                  {% if sort_by == 'payment_status' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% else %}↕{% endif %}
+                </span>
+              </th>
+              <th data-sort="donated_at" class="{{ 'sorted' if sort_by == 'donated_at' }}">
+                Date
+                <span class="sort-icon">
+                  {% if sort_by == 'donated_at' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% else %}↕{% endif %}
+                </span>
+              </th>
+              <th>Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if donations %}
+              {% for d in donations %}
+                <tr>
+                  <td><strong>{{ d.donor_name }}</strong></td>
+                  <td>{{ d.village }}</td>
+                  <td class="amount-cell">
+                    ₹{{ '{:,.0f}'.format(d.amount) }}
+                  </td>
+                  <td>
+                    <span class="badge badge-{{ d.payment_method.lower() }}">
+                      {{ d.payment_method }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-{{ d.payment_status.lower() }}">
+                      {{ d.payment_status }}
+                    </span>
+                  </td>
+                  <td style="font-family: var(--font-mono); font-size: 0.85rem;">
+                    {{ d.donated_at.strftime('%d %b %Y') if d.donated_at else '—' }}
+                  </td>
+                  <td style="color: var(--text-muted); font-size: 0.88rem;">
+                    {{ d.remark or '—' }}
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>
+                      {% if search %}
+                        No donations found matching "<strong>{{ search }}</strong>"
+                      {% else %}
+                        No donation records yet. Check back soon!
+                      {% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      {% if total_pages > 1 %}
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ ((page-1) * per_page) + 1 }}–{{ [page * per_page, total_records] | min }}
+          of {{ total_records }} records
+        </div>
+        <div class="pagination-btns">
+          <!-- Previous -->
+          {% if page > 1 %}
+            <a class="page-btn"
+               href="?table={{ selected_table.table_key if selected_table else '' }}&page={{ page - 1 }}&sort={{ sort_by }}&order={{ sort_order }}&search={{ search }}">
+              ← Prev
+            </a>
+          {% else %}
+            <span class="page-btn disabled">← Prev</span>
+          {% endif %}
+
+          <!-- Page Numbers -->
+          {% for p in range([1, page-2]|max, [total_pages, page+2]|min + 1) %}
+            <a class="page-btn {{ 'active' if p == page }}"
+               href="?table={{ selected_table.table_key if selected_table else '' }}&page={{ p }}&sort={{ sort_by }}&order={{ sort_order }}&search={{ search }}">
+              {{ p }}
+            </a>
+          {% endfor %}
+
+          <!-- Next -->
+          {% if page < total_pages %}
+            <a class="page-btn"
+               href="?table={{ selected_table.table_key if selected_table else '' }}&page={{ page + 1 }}&sort={{ sort_by }}&order={{ sort_order }}&search={{ search }}">
+              Next →
+            </a>
+          {% else %}
+            <span class="page-btn disabled">Next →</span>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+        {% if total_records > 0 %}
+        <div class="pagination">
+          <div class="pagination-info">
+            Showing all {{ total_records }} records
+          </div>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ============================================================
+       NOTICES SECTION
+  ============================================================ -->
+  {% if notices %}
+  <div class="section" id="notices">
+    <div class="section-header">
+      <h2 class="section-title">Latest Notices</h2>
+      <a href="{{ url_for('public.notices') }}" class="btn btn-secondary btn-sm">
+        View All →
+      </a>
+    </div>
+
+    <div class="notices-grid">
+      {% for notice in notices %}
+        <div class="notice-card">
+          <div class="notice-title">{{ notice.title }}</div>
+          <div class="notice-message">{{ notice.message }}</div>
+          <div class="notice-date">
+            📅 {{ notice.created_at.strftime('%d %B %Y, %I:%M %p') if notice.created_at else '' }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /container -->
+{% endblock %}

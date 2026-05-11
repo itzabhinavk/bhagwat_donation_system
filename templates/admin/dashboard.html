@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Bhagwat System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Extra admin panel styles */
+    .tab-btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: -1px;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      color: var(--cyan);
+      border-bottom-color: var(--gold);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     ADMIN HEADER
+============================================================ -->
+<header class="admin-header">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="logo-icon" style="width:38px;height:38px;font-size:18px;">🙏</div>
+    <div>
+      <div style="font-family: var(--font-display); font-weight:700; font-size:1rem; letter-spacing:0.05em;">
+        Bhagwat Admin Panel
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted);">
+        Logged in as: <span style="color: var(--cyan);">{{ session.admin_username }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <span class="admin-badge">Admin Active</span>
+    <a href="{{ url_for('public.index') }}" class="btn btn-secondary btn-sm" target="_blank">
+      🌐 Public Site
+    </a>
+    <a href="{{ url_for('admin.logout') }}" class="btn btn-danger btn-sm"
+       onclick="return confirm('Logout from admin panel?')">
+      🔒 Logout
+    </a>
+  </div>
+</header>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flash-messages" style="padding: 10px 20px 0;">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          {{ '⚠️' if category == 'error' else '✅' }} {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ============================================================
+     DASHBOARD CONTENT
+============================================================ -->
+<div class="container" style="padding-top: 24px; padding-bottom: 40px;">
+
+  <!-- STATS GRID -->
+  <div class="stats-grid" style="margin-bottom: 28px;">
+    <div class="stat-card">
+      <div class="stat-label">Total Donations</div>
+      <div class="stat-value" data-count="{{ total_donations_count }}" data-type="count">0</div>
+      <div class="stat-icon">📋</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Amount Collected</div>
+      <div class="stat-value" data-count="{{ total_amount }}" data-type="amount">₹0</div>
+      <div class="stat-icon">💰</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Donations</div>
+      <div class="stat-value" data-count="{{ pending_donations }}" data-type="count">0</div>
+      <div class="stat-icon">⏳</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Notices</div>
+      <div class="stat-value" data-count="{{ total_notices }}" data-type="count">0</div>
+      <div class="stat-icon">📢</div>
+    </div>
+  </div>
+
+  <!-- TAB NAVIGATION -->
+  <div class="tab-btns">
+    <button class="tab-btn active" onclick="switchTab('donations', this)">
+      💰 Donations
+    </button>
+    <button class="tab-btn" onclick="switchTab('notices', this)" id="notices-tab-btn">
+      📢 Notices
+    </button>
+  </div>
+
+  <!-- ============================================================
+       TAB: DONATIONS
+  ============================================================ -->
+  <div class="tab-panel active" id="tab-donations">
+
+    <div class="table-nav" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+      {% for table in tables %}
+        <a href="{{ url_for('admin.dashboard', table=table.table_key) }}"
+           class="table-tab {{ 'active' if table.table_key == selected_table.table_key else '' }}">
+          {{ table.title }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <div style="margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div>
+        <h3 class="section-title" style="font-size:1.05rem; margin-bottom: 6px;">{{ selected_table.title }}</h3>
+        <p style="margin:0; color: var(--text-muted); font-size:0.95rem;">
+          {{ selected_table.description or 'Manage donations for this category.' }}
+        </p>
+      </div>
+      <a href="#editTableMeta" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+        ✏️ Edit Table Heading
+      </a>
+    </div>
+
+    <!-- ADD DONATION SECTION -->
+    <div class="form-panel mb-2" style="margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+        <h3 class="section-title" style="font-size:1.05rem;">Add New Donation</h3>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin.add_donation') }}">
+        <input type="hidden" name="table_key" value="{{ selected_table.table_key }}">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Donor Name *</label>
+            <input type="text" name="donor_name" placeholder="e.g. Ramesh Patel" required>
+          </div>
+          <div class="form-group">
+            <label>Village *</label>
+            <input type="text" name="village" placeholder="e.g. Rampur" required>
+          </div>
+          <div class="form-group">
+            <label>Contact Info</label>
+            <input type="text" name="donor_contact" placeholder="e.g. 9876543210 / email@example.com">
+          </div>
+          <div class="form-group">
+            <label>Amount (₹) *</label>
+            <input type="number" name="amount" placeholder="e.g. 1100" min="1" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select name="payment_method">
+              <option value="Cash">Cash</option>
+              <option value="Online">Online</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Status</label>
+            <select name="payment_status">
+              <option value="Received">Received</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Donation Date *</label>
+            <input type="date" name="donated_at"
+                   value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+          </div>
+          <div class="form-group full-width">
+            <label>Remark (Optional)</label>
+            <textarea name="remark" placeholder="Any notes about this donation..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary">
+            ➕ Add Donation
+          </button>
+          <button type="reset" class="btn btn-secondary">
+            ✕ Clear
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-panel mb-2" id="editTableMeta" style="margin-bottom: 20px; padding: 18px; background: rgba(255,255,255,0.04);">
+      <h3 class="section-title" style="font-size:1.05rem; margin-bottom: 14px;">Edit Table Heading</h3>
+      <form method="POST" action="{{ url_for('admin.update_table_meta', table_key=selected_table.table_key) }}">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Table Title *</label>
+            <input type="text" name="title" value="{{ selected_table.title }}" required>
+          </div>
+          <div class="form-group full-width">
+            <label>Table Description</label>
+            <textarea name="description" rows="3">{{ selected_table.description or '' }}</textarea>
+          </div>
+        </div>
+        <div style="margin-top: 12px; display:flex; gap:10px; align-items:center;">
+          <button type="submit" class="btn btn-primary">Save Heading</button>
+          <span style="color: var(--text-muted); font-size:0.88rem;">This label appears on public navigation as well.</span>
+        </div>
+      </form>
+    </div>
+
+    <!-- DONATIONS TABLE -->
+    <div class="section-header" style="margin-bottom: 12px;">
+      <h3 class="section-title" style="font-size:1.05rem;">All Donations ({{ total_donations_count }})</h3>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Donor Name</th>
+              <th>Village</th>
+              <th>Contact</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Remark</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if donations %}
+              {% for d in donations %}
+                <tr>
+                  <td style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem;">
+                    {{ d.id }}
+                  </td>
+                  <td><strong>{{ d.donor_name }}</strong></td>
+                  <td>{{ d.village }}</td>
+                  <td>{{ d.donor_contact or '—' }}</td>
+                  <td class="amount-cell">₹{{ '{:,.0f}'.format(d.amount) }}</td>
+                  <td>
+                    <span class="badge badge-{{ d.payment_method.lower() }}">
+                      {{ d.payment_method }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-{{ d.payment_status.lower() }}">
+                      {{ d.payment_status }}
+                    </span>
+                  </td>
+                  <td style="font-family: var(--font-mono); font-size:0.82rem;">
+                    {{ d.donated_at.strftime('%d %b %Y') if d.donated_at else '—' }}
+                  </td>
+                  <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ d.remark or '—' }}
+                  </td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn btn-secondary btn-sm"
+                              data-edit-donation="{{ d.id }}"
+                              data-table-key="{{ selected_table.table_key }}"
+                              title="Edit donation">
+                        ✏️ <span>Edit</span>
+                      </button>
+                      <button class="btn btn-danger btn-sm"
+                              data-delete-donation="{{ d.id }}"
+                              data-table-key="{{ selected_table.table_key }}"
+                              data-donor-name="{{ d.donor_name }}"
+                              title="Delete donation">
+                        🗑️ <span>Delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="11">
+                  <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>No donations yet. Add your first donation above!</p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination for admin table -->
+      {% if total_pages > 1 %}
+      <div class="pagination">
+        <div class="pagination-info">Page {{ page }} of {{ total_pages }}</div>
+        <div class="pagination-btns">
+          {% for p in range(1, total_pages + 1) %}
+            <a class="page-btn {{ 'active' if p == page }}" href="?page={{ p }}">{{ p }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TAB: NOTICES
+  ============================================================ -->
+  <div class="tab-panel" id="tab-notices">
+
+    <!-- ADD NOTICE FORM -->
+    <div class="form-panel mb-2" style="margin-bottom: 20px;">
+      <h3 class="section-title" style="font-size:1.05rem; margin-bottom: 18px;">Add New Notice</h3>
+
+      <form method="POST" action="{{ url_for('admin.add_notice') }}">
+        <div class="form-group mb-2">
+          <label>Notice Title *</label>
+          <input type="text" name="title" placeholder="e.g. Program Timing Update" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Notice Message *</label>
+          <textarea name="message" rows="4" placeholder="Write the notice content here..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          📢 Post Notice
+        </button>
+      </form>
+    </div>
+
+    <!-- NOTICES LIST -->
+    <div class="section-header" style="margin-bottom: 12px;">
+      <h3 class="section-title" style="font-size:1.05rem;">Posted Notices ({{ notices|length }})</h3>
+    </div>
+
+    {% if notices %}
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for notice in notices %}
+          <div class="form-panel" style="padding: 20px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+              <div style="flex: 1;">
+                <div style="font-family: var(--font-display); font-size: 1rem; color: var(--cyan); font-weight: 700; margin-bottom: 6px;">
+                  {{ notice.title }}
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7;">
+                  {{ notice.message }}
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+                  📅 {{ notice.created_at.strftime('%d %B %Y, %I:%M %p') if notice.created_at else '' }}
+                </div>
+              </div>
+              <div class="action-btns">
+                <button class="btn btn-secondary btn-sm"
+                        data-edit-notice="{{ notice.id }}">
+                  ✏️ Edit
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        data-delete-notice="{{ notice.id }}">
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="table-wrap">
+        <div class="empty-state">
+          <div class="empty-icon">📢</div>
+          <p>No notices yet. Post your first notice above!</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+</div><!-- /container -->
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+
+<!-- Edit Donation Modal -->
+<div class="modal-overlay" id="editDonationModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Donation</div>
+      <button class="modal-close" data-close-modal="editDonationModal">✕</button>
+    </div>
+    <form method="POST" id="editDonationModalForm" action="">
+      <div id="editDonationForm">
+        <!-- Populated dynamically by admin.js -->
+      </div>
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+        <button type="button" class="btn btn-secondary" data-close-modal="editDonationModal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Notice Modal -->
+<div class="modal-overlay" id="editNoticeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Notice</div>
+      <button class="modal-close" data-close-modal="editNoticeModal">✕</button>
+    </div>
+    <form method="POST" id="editNoticeModalForm" action="">
+      <div id="editNoticeForm">
+        <!-- Populated dynamically by admin.js -->
+      </div>
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button type="submit" class="btn btn-primary">💾 Save Notice</button>
+        <button type="button" class="btn btn-secondary" data-close-modal="editNoticeModal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+============================================================ -->
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+  // Tab switching
+  function switchTab(tabName, btnEl) {
+    // Hide all panels
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.add('active');
+    btnEl.classList.add('active');
+  }
+
+  // Set today's date in add donation form
+  const dateInput = document.querySelector('input[name="donated_at"]');
+  if (dateInput && !dateInput.value) {
+    dateInput.value = new Date().toISOString().split('T')[0];
+  }
+
+  // If URL has #notices-section anchor, switch to notices tab
+  if (window.location.href.includes('#notices')) {
+    const noticesBtn = document.querySelectorAll('.tab-btn')[1];
+    if (noticesBtn) switchTab('notices', noticesBtn);
+    setTimeout(() => window.scrollTo(0, 0), 100);
+  }
+</script>
+</body>
+</html>

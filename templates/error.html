@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Error - Bhagwat System{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 80px; text-align: center;">
+  <div class="empty-icon" style="font-size: 4rem;">⚠️</div>
+  <h2 style="color: var(--error); margin: 16px 0;">Something went wrong</h2>
+  <p style="color: var(--text-muted); margin-bottom: 24px;">{{ error }}</p>
+  <a href="{{ url_for('public.index') }}" class="btn btn-primary">← Go to Homepage</a>
+</div>
+{% endblock %}
