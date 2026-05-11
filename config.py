@@ -16,12 +16,11 @@ class Config:
     SECRET_KEY = str(os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production')
 
     # MySQL database connection settings (Local MySQL)
-    DB_HOST = str(os.environ.get('DB_HOST'),),
-    DB_USER = str(os.environ.get('DB_USER'), 'root'),
-    DB_PASSWORD = str(os.environ.get('DB_PASSWORD'), ),
-    DB_NAME = str(os.environ.get('DB_NAME'), ),
-    DB_PORT = int(str(os.environ.get('DB_PORT'), )),
-
+    DB_HOST = os.environ.get('DB_HOST', '')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+    DB_NAME = os.environ.get('DB_NAME', '')
+    DB_PORT = int(os.environ.get('DB_PORT', ))
     # Session configuration
     SESSION_TYPE = 'filesystem'
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour
