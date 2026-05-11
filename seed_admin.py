@@ -64,6 +64,7 @@ def create_admin():
                 "INSERT INTO admins (username, password) VALUES (%s, %s)",
                 (username, hashed_password)
             )
+            conn.commit()
             print(f"\n✅ Admin '{username}' created successfully!")
 
         cursor.close()
