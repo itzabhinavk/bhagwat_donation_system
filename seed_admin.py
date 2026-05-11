@@ -55,7 +55,7 @@ def create_admin():
             # Update existing admin password
             cursor.execute(
                 "UPDATE admins SET password = %s WHERE username = %s",
-                (hashed_password, username)
+                (username, hashed_password)
             )
             print(f"\n✅ Admin '{username}' password updated successfully!")
         else:
