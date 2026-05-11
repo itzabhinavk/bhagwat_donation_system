@@ -16,7 +16,7 @@ class Config:
     SECRET_KEY = str(os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production')
 
     # MySQL database connection settings (Local MySQL)
-      DB_HOST = str(os.environ.get('DB_HOST') or 'localhost')
+    DB_HOST = str(os.environ.get('DB_HOST') or 'localhost')
     DB_USER = str(os.environ.get('DB_USER') or 'root')
     DB_PASSWORD = str(os.environ.get('DB_PASSWORD') or 'Shubham#1204')
     DB_NAME = str(os.environ.get('DB_NAME') or 'bhagwat_db')
