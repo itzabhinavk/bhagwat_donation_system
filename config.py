@@ -20,7 +20,7 @@ class Config:
     DB_USER = os.environ.get('DB_USER', ''),
     DB_PASSWORD = os.environ.get('DB_PASSWORD', ''),
     DB_NAME = os.environ.get('DB_NAME', ''),
-    DB_PORT = int(os.environ.get('DB_PORT',),
+    DB_PORT = int(os.environ.get('DB_PORT',)
 
     # Session configuration
     SESSION_TYPE = 'filesystem'
