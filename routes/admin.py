@@ -54,8 +54,8 @@ def login():
         return redirect(url_for('admin.dashboard'))
 
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        username = str(request.form.get('username', '')).strip()
+        password = str(request.form.get('password', '')).strip()
 
         if not username or not password:
             flash('Please enter both username and password.', 'error')
@@ -132,7 +132,7 @@ def logout():
 @login_required
 def dashboard():
     """Main admin dashboard with stats and management."""
-    table_key = request.args.get('table')
+    table_key = str(request.args.get('table', '')).strip()
     try:
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -160,7 +160,8 @@ def dashboard():
             table['pending_count'] = cursor.fetchone()['count']
             pending_donations += table['pending_count']
 
-        page = int(request.args.get('page', 1))
+        page_str = str(request.args.get('page', '1')).strip()
+        page = int(page_str) if page_str.isdigit() else 1
         per_page = 20
         cursor.execute(
             f"SELECT COUNT(*) AS total FROM {selected_table['table_key']}"
@@ -228,15 +229,15 @@ def dashboard():
 @login_required
 def add_donation():
     """Add a new donation record."""
-    table_key = request.form.get('table_key', '').strip()
-    donor_name = request.form.get('donor_name', '').strip()
-    village = request.form.get('village', '').strip()
-    donor_contact = request.form.get('donor_contact', '').strip()
-    amount = request.form.get('amount', '').strip()
-    payment_method = request.form.get('payment_method', 'Cash').strip()
-    payment_status = request.form.get('payment_status', 'Received').strip()
-    remark = request.form.get('remark', '').strip()
-    donated_at = request.form.get('donated_at', '').strip()
+    table_key = str(request.form.get('table_key', '')).strip()
+    donor_name = str(request.form.get('donor_name', '')).strip()
+    village = str(request.form.get('village', '')).strip()
+    donor_contact = str(request.form.get('donor_contact', '')).strip()
+    amount = str(request.form.get('amount', '')).strip()
+    payment_method = str(request.form.get('payment_method', 'Cash')).strip()
+    payment_status = str(request.form.get('payment_status', 'Received')).strip()
+    remark = str(request.form.get('remark', '')).strip()
+    donated_at = str(request.form.get('donated_at', '')).strip()
 
     try:
         conn = get_db_connection()
@@ -325,14 +326,14 @@ def get_donation(table_key, donation_id):
 @login_required
 def edit_donation(table_key, donation_id):
     """Update an existing donation record."""
-    donor_name = request.form.get('donor_name', '').strip()
-    village = request.form.get('village', '').strip()
-    donor_contact = request.form.get('donor_contact', '').strip()
-    amount = request.form.get('amount', '').strip()
-    payment_method = request.form.get('payment_method', 'Cash').strip()
-    payment_status = request.form.get('payment_status', 'Received').strip()
-    remark = request.form.get('remark', '').strip()
-    donated_at = request.form.get('donated_at', '').strip()
+    donor_name = str(request.form.get('donor_name', '')).strip()
+    village = str(request.form.get('village', '')).strip()
+    donor_contact = str(request.form.get('donor_contact', '')).strip()
+    amount = str(request.form.get('amount', '')).strip()
+    payment_method = str(request.form.get('payment_method', 'Cash')).strip()
+    payment_status = str(request.form.get('payment_status', 'Received')).strip()
+    remark = str(request.form.get('remark', '')).strip()
+    donated_at = str(request.form.get('donated_at', '')).strip()
 
     try:
         conn = get_db_connection()
@@ -422,8 +423,8 @@ def delete_donation(table_key, donation_id):
 @login_required
 def update_table_meta(table_key):
     """Update the selected donation table title and description."""
-    title = request.form.get('title', '').strip()
-    description = request.form.get('description', '').strip()
+    title = str(request.form.get('title', '')).strip()
+    description = str(request.form.get('description', '')).strip()
 
     try:
         conn = get_db_connection()
@@ -460,8 +461,8 @@ def update_table_meta(table_key):
 @login_required
 def add_notice():
     """Add a new notice."""
-    title = request.form.get('title', '').strip()
-    message = request.form.get('message', '').strip()
+    title = str(request.form.get('title', '')).strip()
+    message = str(request.form.get('message', '')).strip()
 
     if not title or not message:
         flash('Please fill in both title and message for the notice.', 'error')
@@ -505,8 +506,8 @@ def get_notice(notice_id):
 @login_required
 def edit_notice(notice_id):
     """Update a notice."""
-    title = request.form.get('title', '').strip()
-    message = request.form.get('message', '').strip()
+    title = str(request.form.get('title', '')).strip()
+    message = str(request.form.get('message', '')).strip()
 
     if not title or not message:
         flash('Please fill in both title and message.', 'error')
