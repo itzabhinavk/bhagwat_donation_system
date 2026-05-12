@@ -8,6 +8,14 @@ from flask import session, redirect, url_for, flash
 from database.db import get_db_connection
 
 
+def _row_to_dict(cursor, row):
+    """Convert a tuple row to a dict if cursor returned non-dictionary rows."""
+    if row is None or isinstance(row, dict):
+        return row
+    if hasattr(cursor, 'column_names'):
+        return dict(zip(cursor.column_names, row))
+    return row
+
 def generate_session_token():
     """Generate a unique session token."""
     return str(uuid.uuid4())
