@@ -51,7 +51,7 @@ def _ensure_schema(connection):
         (Config.DB_NAME,)
     )
     result = cursor.fetchone()
-    donation_tables_exist
+    donation_tables_exist = result[0] > 0
     
     if not donation_tables_exist:
         _initialize_schema(connection)
