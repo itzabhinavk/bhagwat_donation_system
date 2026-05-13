@@ -93,7 +93,8 @@ def get_db_connection():
             password=Config.DB_PASSWORD,
             database=Config.DB_NAME,
             port=Config.DB_PORT,
-            autocommit=True
+            autocommit=True,
+            dictionary=True
         )
         _ensure_schema(connection)
         return connection
