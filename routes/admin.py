@@ -17,6 +17,7 @@ def _fetch_table_metadata(conn):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute("SELECT table_key, title, description FROM donation_tables ORDER BY id")
     tables = cursor.fetchall()
+    conn.commit()
     cursor.close()
     return tables
 
@@ -78,7 +79,8 @@ def login():
                     "UPDATE admins SET active_session = %s WHERE id = %s",
                     (new_token, admin['id'])
                 )
-
+                
+                conn.commit()
                 cursor.close()
                 conn.close()
 
@@ -92,6 +94,7 @@ def login():
                 flash('Welcome back! You are now logged in.', 'success')
                 return redirect(url_for('admin.dashboard'))
             else:
+                conn.commit()
                 cursor.close()
                 conn.close()
                 flash('Invalid username or password.', 'error')
@@ -114,6 +117,7 @@ def logout():
                 "UPDATE admins SET active_session = NULL WHERE id = %s",
                 (session['admin_id'],)
             )
+            conn.commit()
             cursor.close()
             conn.close()
         except Exception:
@@ -185,7 +189,8 @@ def dashboard():
 
         cursor.execute("SELECT * FROM notices ORDER BY created_at DESC")
         notices = cursor.fetchall()
-
+        
+        conn.commit()
         cursor.close()
         conn.close()
 
@@ -282,6 +287,7 @@ def add_donation():
             remark or None,
             donated_at
         ))
+        conn.commit()
         cursor.close()
         conn.close()
         flash(f"Donation added to {selected_table['title']} successfully!", 'success')
@@ -308,6 +314,7 @@ def get_donation(table_key, donation_id):
             (donation_id,)
         )
         donation = cursor.fetchone()
+        conn.commit()
         cursor.close()
         conn.close()
 
@@ -384,6 +391,7 @@ def edit_donation(table_key, donation_id):
             donated_at,
             donation_id
         ))
+        conn.commit()
         cursor.close()
         conn.close()
         flash('Donation updated successfully!', 'success')
@@ -410,6 +418,7 @@ def delete_donation(table_key, donation_id):
             f"DELETE FROM {selected_table['table_key']} WHERE id = %s",
             (donation_id,)
         )
+        conn.commit()
         cursor.close()
         conn.close()
         flash('Donation deleted successfully.', 'success')
@@ -472,6 +481,7 @@ def add_notice():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO notices (title, message) VALUES (%s, %s)", (title, message))
+        conn.commit()
         cursor.close()
         conn.close()
         flash('Notice added successfully!', 'success')
@@ -490,6 +500,7 @@ def get_notice(notice_id):
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM notices WHERE id = %s", (notice_id,))
         notice = cursor.fetchone()
+        conn.commit()
         cursor.close()
         conn.close()
 
@@ -520,6 +531,7 @@ def edit_notice(notice_id):
             "UPDATE notices SET title=%s, message=%s WHERE id=%s",
             (title, message, notice_id)
         )
+        conn.commit()
         cursor.close()
         conn.close()
         flash('Notice updated successfully!', 'success')
@@ -537,6 +549,7 @@ def delete_notice(notice_id):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM notices WHERE id = %s", (notice_id,))
+        conn.commit()
         cursor.close()
         conn.close()
         flash('Notice deleted.', 'success')
