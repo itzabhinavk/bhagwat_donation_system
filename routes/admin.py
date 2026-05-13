@@ -108,7 +108,7 @@ def logout():
     if 'admin_id' in session:
         try:
             conn = get_db_connection()
-            cursor = conn.cursor()
+            cursor = conn.cursor(pymysql.cursors.DictCursor)
             # Clear active session in database
             cursor.execute(
                 "UPDATE admins SET active_session = NULL WHERE id = %s",
