@@ -50,8 +50,9 @@ def _ensure_schema(connection):
         "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'donation_tables'",
         (Config.DB_NAME,)
     )
-    donation_tables_exist = cursor.fetchone()[0] > 0
-
+    result = cursor.fetchone()
+    donation_tables_exist
+    
     if not donation_tables_exist:
         _initialize_schema(connection)
         cursor.close()
