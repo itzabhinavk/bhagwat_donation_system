@@ -3,7 +3,6 @@ database/db.py - MySQL Connection Utility
 Provides helpers to create and connect to the MySQL database.
 """
 import os
-import pymysql
 import mysql.connector
 from mysql.connector import errorcode, Error
 from config import Config
@@ -28,13 +27,12 @@ def _initialize_schema(connection):
 
 def _create_database_if_missing():
     """Create the database if it does not already exist."""
-    server_conn = pymysql.connector.connect(
+    server_conn = mysql.connector.connect(
         host=Config.DB_HOST,
         user=Config.DB_USER,
         password=Config.DB_PASSWORD,
         port=Config.DB_PORT,
-        autocommit=True,
-        cursorclass=pymysql.curors.DictDictCursor
+        autocommit=True
         
     )
     try:
@@ -88,14 +86,13 @@ def get_db_connection():
     If the configured database does not exist, it will be created automatically.
     """
     try:
-        connection =pymysql.connector.connect(
+        connection = mysql.connector.connect(
             host=Config.DB_HOST,
             user=Config.DB_USER,
             password=Config.DB_PASSWORD,
             database=Config.DB_NAME,
             port=Config.DB_PORT,
-            autocommit=True,
-            cursorclass=pymysql.curors.DictDictCursor
+            autocommit=True
         )
         _ensure_schema(connection)
         return connection
