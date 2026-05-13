@@ -108,7 +108,7 @@ def logout():
     if 'admin_id' in session:
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(pymysql.cursors.DictCursor)
+            cursor = conn.cursor()
             # Clear active session in database
             cursor.execute(
                 "UPDATE admins SET active_session = NULL WHERE id = %s",
@@ -487,7 +487,7 @@ def get_notice(notice_id):
     """Get a single notice as JSON (for edit modal)."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM notices WHERE id = %s", (notice_id,))
         notice = cursor.fetchone()
         cursor.close()
@@ -544,20 +544,3 @@ def delete_notice(notice_id):
         flash(f'Error deleting notice: {str(e)}', 'error')
 
     return redirect(url_for('admin.dashboard') + '#notices-section')
-
-
-@admin_bp.route('/update-settings', methods=['POST'])
-@login_required
-def update_settings():
-    """Update admin settings."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE settings SET site_name=%s, site_description=%s WHERE id=1", (request.form.get('site_name'), request.form.get('site_description')))
-        cursor.close()
-        conn.close()
-        flash('Settings updated successfully!', 'success')
-    except Exception as e:
-        flash(f'Error updating settings: {str(e)}', 'error')
-    
-    return redirect(url_for('admin.settings'))
