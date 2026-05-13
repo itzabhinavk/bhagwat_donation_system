@@ -28,12 +28,13 @@ def _initialize_schema(connection):
 
 def _create_database_if_missing():
     """Create the database if it does not already exist."""
-    server_conn = mysql.connector.connect(
+    server_conn = pymysql.connector.connect(
         host=Config.DB_HOST,
         user=Config.DB_USER,
         password=Config.DB_PASSWORD,
         port=Config.DB_PORT,
-        autocommit=True
+        autocommit=True,
+        cursorclass=pymysql.curors.DictDictCursor
         
     )
     try:
@@ -87,7 +88,7 @@ def get_db_connection():
     If the configured database does not exist, it will be created automatically.
     """
     try:
-        connection = mysql.connector.connect(
+        connection =pymysql.connector.connect(
             host=Config.DB_HOST,
             user=Config.DB_USER,
             password=Config.DB_PASSWORD,
