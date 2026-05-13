@@ -3,9 +3,11 @@ database/db.py - MySQL Connection Utility
 Provides helpers to create and connect to the MySQL database.
 """
 import os
+import pymysql
 import mysql.connector
 from mysql.connector import errorcode, Error
 from config import Config
+
 
 SCHEMA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schema.sql')
 
@@ -32,6 +34,7 @@ def _create_database_if_missing():
         password=Config.DB_PASSWORD,
         port=Config.DB_PORT,
         autocommit=True
+        
     )
     try:
         _initialize_schema(server_conn)
@@ -90,7 +93,8 @@ def get_db_connection():
             password=Config.DB_PASSWORD,
             database=Config.DB_NAME,
             port=Config.DB_PORT,
-            autocommit=True
+            autocommit=True,
+            cursorclass=pymysql.curors.DictDictCursor
         )
         _ensure_schema(connection)
         return connection
