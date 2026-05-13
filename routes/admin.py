@@ -487,7 +487,7 @@ def get_notice(notice_id):
     """Get a single notice as JSON (for edit modal)."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM notices WHERE id = %s", (notice_id,))
         notice = cursor.fetchone()
         cursor.close()
