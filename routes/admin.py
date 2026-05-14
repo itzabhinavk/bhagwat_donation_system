@@ -281,6 +281,18 @@ def add_donation():
             remark or None,
             donated_at
         ))
+
+        # Auto-sync to ledger as income
+        from database.db import add_ledger_entry
+        ledger_reason = f"दान - {selected_table['title']} - {donor_name}"
+        add_ledger_entry(
+            reason=ledger_reason,
+            amount=amount_val,  # positive for income
+            date=donated_at,
+            created_by=session['admin_id'],
+            is_income=True
+        )
+
         cursor.close()
         conn.close()
         flash(f"Donation added to {selected_table['title']} successfully!", 'success')
@@ -543,3 +555,166 @@ def delete_notice(notice_id):
         flash(f'Error deleting notice: {str(e)}', 'error')
 
     return redirect(url_for('admin.dashboard') + '#notices-section')
+
+
+# ============================================================
+# EXPENSE LEDGER
+# ============================================================
+
+@admin_bp.route('/ledger')
+@login_required
+def ledger():
+    """Expense ledger dashboard with income/expense tracking."""
+    page = int(request.args.get('page', 1))
+    date_from = request.args.get('date_from', '').strip() or None
+    date_to = request.args.get('date_to', '').strip() or None
+
+    try:
+        from database.db import get_ledger_summary, get_ledger_entries
+
+        summary = get_ledger_summary()
+        ledger_data = get_ledger_entries(
+            page=page,
+            date_from=date_from,
+            date_to=date_to
+        )
+
+        return render_template('admin/ledger.html',
+            summary=summary,
+            entries=ledger_data['entries'],
+            total_count=ledger_data['total_count'],
+            total_pages=ledger_data['total_pages'],
+            current_page=ledger_data['current_page'],
+            filters={
+                'date_from': date_from,
+                'date_to': date_to
+            }
+        )
+
+    except Exception as e:
+        flash(f'Error loading ledger: {str(e)}', 'error')
+        return render_template('admin/ledger.html',
+            summary={'total_income': 0, 'total_expenses': 0, 'net_balance': 0},
+            entries=[],
+            total_count=0,
+            total_pages=1,
+            current_page=1,
+            filters={}
+        )
+
+
+@admin_bp.route('/add-ledger-entry', methods=['POST'])
+@login_required
+def add_ledger_entry():
+    """Add a new expense entry (debit only)."""
+    reason = request.form.get('reason', '').strip()
+    amount = request.form.get('amount', '').strip()
+    date = request.form.get('date', '').strip()
+
+    if not all([reason, amount, date]):
+        flash('Please fill in all required fields.', 'error')
+        return redirect(url_for('admin.ledger'))
+
+    try:
+        amount_val = float(amount)
+        if amount_val >= 0:
+            raise ValueError("Amount must be negative for expenses")
+    except ValueError:
+        flash('Please enter a valid negative amount for expenses.', 'error')
+        return redirect(url_for('admin.ledger'))
+
+    try:
+        from database.db import add_ledger_entry
+        entry_id = add_ledger_entry(
+            reason=reason,
+            amount=amount_val,  # negative
+            date=date,
+            created_by=session['admin_id'],
+            is_income=False
+        )
+        flash('Expense entry added successfully!', 'success')
+    except Exception as e:
+        flash(f'Error adding ledger entry: {str(e)}', 'error')
+
+    return redirect(url_for('admin.ledger'))
+
+
+@admin_bp.route('/edit-ledger-entry/<int:entry_id>', methods=['POST'])
+@login_required
+def edit_ledger_entry(entry_id):
+    """Update an existing ledger entry (debit only)."""
+    reason = request.form.get('reason', '').strip()
+    amount = request.form.get('amount', '').strip()
+    date = request.form.get('date', '').strip()
+
+    if not any([reason, amount, date]):
+        flash('Please provide at least one field to update.', 'error')
+        return redirect(url_for('admin.ledger'))
+
+    try:
+        amount_val = None
+        if amount:
+            amount_val = float(amount)
+            if amount_val >= 0:
+                raise ValueError("Amount must be negative for expenses")
+
+        from database.db import update_ledger_entry
+        success = update_ledger_entry(
+            entry_id=entry_id,
+            reason=reason or None,
+            amount=amount_val,
+            date=date or None
+        )
+        if success:
+            flash('Ledger entry updated successfully!', 'success')
+        else:
+            flash('Entry not found or cannot be edited (only debit entries allowed).', 'error')
+    except Exception as e:
+        flash(f'Error updating ledger entry: {str(e)}', 'error')
+
+    return redirect(url_for('admin.ledger'))
+
+
+@admin_bp.route('/delete-ledger-entry/<int:entry_id>', methods=['POST'])
+@login_required
+def delete_ledger_entry(entry_id):
+    """Delete a ledger entry."""
+    try:
+        from database.db import delete_ledger_entry
+        success = delete_ledger_entry(entry_id)
+        if success:
+            flash('Ledger entry deleted successfully.', 'success')
+        else:
+            flash('Entry not found.', 'error')
+    except Exception as e:
+        flash(f'Error deleting ledger entry: {str(e)}', 'error')
+
+    return redirect(url_for('admin.ledger'))
+
+
+@admin_bp.route('/get-ledger-entry/<int:entry_id>')
+@login_required
+def get_ledger_entry(entry_id):
+    """Get a single ledger entry as JSON (for edit modal)."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM expense_ledger WHERE id = %s", (entry_id,))
+        entry = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not entry:
+            return jsonify({'error': 'Entry not found'}), 404
+
+        # Only allow editing debit entries
+        if entry['payment_status'] >= 0:
+            return jsonify({'error': 'Only debit entries can be edited'}), 403
+
+        entry['date'] = str(entry['date'])
+        entry['created_at'] = str(entry['created_at'])
+        entry['payment_status'] = float(entry['payment_status'])
+        entry['balance'] = float(entry['balance'])
+        return jsonify(entry)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
