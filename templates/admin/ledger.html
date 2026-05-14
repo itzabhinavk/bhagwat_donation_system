@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}Expense Ledger - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <!-- Admin Header -->
+  <div class="admin-header">
+    <div class="admin-logo">
+      <div class="logo-icon">📊</div>
+      <div>
+        <h1>Expense Ledger</h1>
+        <p>Financial tracking and transparency</p>
+      </div>
+    </div>
+    <div class="admin-actions">
+      <span class="admin-badge">
+        <span class="pulse-dot"></span>
+        Admin Active
+      </span>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary btn-sm">
+        ← Back to Dashboard
+      </a>
+      <a href="{{ url_for('admin.logout') }}" class="btn btn-danger btn-sm">
+        Logout
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Income</div>
+      <div class="stat-value" style="color: var(--success);">
+        ₹{{ '{:,.0f}'.format(summary.total_income) }}
+      </div>
+      <div class="stat-icon">💰</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Expenses</div>
+      <div class="stat-value" style="color: var(--error);">
+        ₹{{ '{:,.0f}'.format(summary.total_expenses) }}
+      </div>
+      <div class="stat-icon">💸</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Net Balance</div>
+      <div class="stat-value" style="{% if summary.net_balance >= 0 %}color: var(--success);{% else %}color: var(--error);{% endif %}">
+        ₹{{ '{:,.0f}'.format(summary.net_balance) }}
+      </div>
+      <div class="stat-icon">⚖️</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Transaction History</h2>
+      <button class="btn btn-primary" id="addEntryBtn">
+        + Add Entry
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <form method="GET" class="filters-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date_from">From Date</label>
+            <input type="date" name="date_from" id="date_from" value="{{ filters.date_from }}">
+          </div>
+          <div class="form-group">
+            <label for="date_to">To Date</label>
+            <input type="date" name="date_to" id="date_to" value="{{ filters.date_to }}">
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button type="submit" class="btn btn-secondary btn-sm">Apply Filters</button>
+          <a href="{{ url_for('admin.ledger') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Entries Table -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>क्रम संख्या</th>
+              <th>कारण</th>
+              <th>तारीख</th>
+              <th>भुगतान स्थिति</th>
+              <th>वर्तमान शेष</th>
+              <th>क्रियाएँ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if entries %}
+              {% for entry in entries %}
+                <tr>
+                  <td style="font-family: var(--font-mono);">
+                    {{ entry.id }}
+                  </td>
+                  <td>{{ entry.reason }}</td>
+                  <td style="font-family: var(--font-mono);">
+                    {{ entry.date }}
+                  </td>
+                  <td class="amount-cell" style="color: {{ 'var(--success)' if entry.payment_status > 0 else 'var(--error)' }};">
+                    {{ '₹' if entry.payment_status > 0 else '-₹' }}{{ '{:,.0f}'.format(entry.payment_status | abs) }}
+                  </td>
+                  <td class="amount-cell" style="color: {{ 'var(--success)' if entry.balance >= 0 else 'var(--error)' }};">
+                    ₹{{ '{:,.0f}'.format(entry.balance) }}
+                  </td>
+                  <td>
+                    <div class="action-btns">
+                      {% if entry.payment_status < 0 %}
+                        <button class="btn btn-secondary btn-sm edit-btn"
+                                data-id="{{ entry.id }}"
+                                title="Edit entry">
+                          ✏️
+                        </button>
+                      {% endif %}
+                      <button class="btn btn-danger btn-sm delete-btn"
+                              data-id="{{ entry.id }}"
+                              data-reason="{{ entry.reason }}"
+                              data-amount="{{ entry.payment_status }}"
+                              title="Delete entry">
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>
+                      {% if filters.date_from or filters.date_to %}
+                        No entries found matching your filters.
+                      {% else %}
+                        No ledger entries yet. Add your first expense entry!
+                      {% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if total_pages > 1 %}
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ ((current_page-1) * 20) + 1 }}–{{ [current_page * 20, total_count] | min }}
+          of {{ total_count }} entries
+        </div>
+        <div class="pagination-btns">
+          <!-- Previous -->
+          {% if current_page > 1 %}
+            <a class="page-btn"
+               href="?page={{ current_page - 1 }}{% if filters.type %}&type={{ filters.type }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+              ← Prev
+            </a>
+          {% else %}
+            <span class="page-btn disabled">← Prev</span>
+          {% endif %}
+
+          <!-- Page Numbers -->
+          {% for p in range([1, current_page-2]|max, [total_pages, current_page+2]|min + 1) %}
+            <a class="page-btn {{ 'active' if p == current_page }}"
+               href="?page={{ p }}{% if filters.type %}&type={{ filters.type }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+              {{ p }}
+            </a>
+          {% endfor %}
+
+          <!-- Next -->
+          {% if current_page < total_pages %}
+            <a class="page-btn"
+               href="?page={{ current_page + 1 }}{% if filters.type %}&type={{ filters.type }}{% endif %}{% if filters.category %}&category={{ filters.category }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+              Next →
+            </a>
+          {% else %}
+            <span class="page-btn disabled">Next →</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Entry Modal -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Add Ledger Entry</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+
+    <form id="entryForm" method="POST">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="entryReason">कारण (Reason) *</label>
+          <input type="text" name="reason" id="entryReason"
+                 placeholder="व्यय का कारण"
+                 required>
+        </div>
+        <div class="form-group">
+          <label for="entryAmount">राशि (₹) *</label>
+          <input type="number" name="amount" id="entryAmount"
+                 step="0.01" max="-0.01" placeholder="-100.00" required>
+        </div>
+        <div class="form-group">
+          <label for="entryDate">तारीख (Date) *</label>
+          <input type="date" name="date" id="entryDate" required>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Add Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Confirm Delete</h3>
+      <button class="modal-close" id="deleteModalClose">×</button>
+    </div>
+
+    <div class="modal-body">
+      <p>Are you sure you want to delete this <strong id="deleteType"></strong> entry of <strong id="deleteAmount"></strong>?</p>
+      <p class="text-muted">This action cannot be undone.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Modal functionality
+const entryModal = document.getElementById('entryModal');
+const deleteModal = document.getElementById('deleteModal');
+const entryForm = document.getElementById('entryForm');
+let editingId = null;
+
+// Add entry button
+document.getElementById('addEntryBtn').addEventListener('click', () => {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'व्यय प्रविष्टि जोड़ें';
+  document.getElementById('submitBtn').textContent = 'जोड़ें';
+  entryForm.action = '{{ url_for("admin.add_ledger_entry") }}';
+  entryForm.reset();
+  document.getElementById('entryDate').valueAsDate = new Date();
+  entryModal.classList.add('active');
+});
+
+// Edit buttons
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const id = e.target.dataset.id;
+    try {
+      const response = await fetch(`{{ url_for('admin.get_ledger_entry', entry_id=0) }}`.replace('0', id));
+      const entry = await response.json();
+
+      if (entry.error) {
+        alert('Error loading entry: ' + entry.error);
+        return;
+      }
+
+      editingId = id;
+      document.getElementById('modalTitle').textContent = 'व्यय प्रविष्टि संपादित करें';
+      document.getElementById('submitBtn').textContent = 'अपडेट करें';
+      entryForm.action = `{{ url_for('admin.edit_ledger_entry', entry_id=0) }}`.replace('0', id);
+
+      document.getElementById('entryReason').value = entry.reason;
+      document.getElementById('entryAmount').value = entry.payment_status;
+      document.getElementById('entryDate').value = entry.date;
+
+      entryModal.classList.add('active');
+    } catch (error) {
+      alert('Error loading entry for editing');
+    }
+  });
+});
+
+// Delete buttons
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const id = e.target.dataset.id;
+    const reason = e.target.dataset.reason;
+    const amount = e.target.dataset.amount;
+
+    document.getElementById('deleteType').textContent = 'व्यय (' + reason + ')';
+    document.getElementById('deleteAmount').textContent = '₹' + Math.abs(parseFloat(amount)).toLocaleString();
+
+    document.getElementById('deleteConfirmBtn').onclick = () => {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `{{ url_for('admin.delete_ledger_entry', entry_id=0) }}`.replace('0', id);
+      document.body.appendChild(form);
+      form.submit();
+    };
+
+    deleteModal.classList.add('active');
+  });
+});
+
+// Modal close handlers
+document.getElementById('modalClose').addEventListener('click', () => {
+  entryModal.classList.remove('active');
+});
+
+document.getElementById('deleteModalClose').addEventListener('click', () => {
+  deleteModal.classList.remove('active');
+});
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  entryModal.classList.remove('active');
+});
+
+document.getElementById('deleteCancelBtn').addEventListener('click', () => {
+  deleteModal.classList.remove('active');
+});
+
+// Close modals when clicking overlay
+entryModal.addEventListener('click', (e) => {
+  if (e.target === entryModal) {
+    entryModal.classList.remove('active');
+  }
+});
+
+deleteModal.addEventListener('click', (e) => {
+  if (e.target === deleteModal) {
+    deleteModal.classList.remove('active');
+  }
+});
+</script>
+
+{% endblock %}
