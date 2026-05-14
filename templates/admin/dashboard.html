@@ -61,6 +61,9 @@
     <a href="{{ url_for('public.index') }}" class="btn btn-secondary btn-sm" target="_blank">
       🌐 Public Site
     </a>
+    <a href="{{ url_for('admin.ledger') }}" class="btn btn-secondary btn-sm">
+      📊 Ledger
+    </a>
     <a href="{{ url_for('admin.logout') }}" class="btn btn-danger btn-sm"
        onclick="return confirm('Logout from admin panel?')">
       🔒 Logout
@@ -154,6 +157,22 @@
 
       <form method="POST" action="{{ url_for('admin.add_donation') }}">
         <input type="hidden" name="table_key" value="{{ selected_table.table_key }}">
+        {% if selected_table.table_key == 'general_donations' %}
+        <div class="form-grid">
+          <div class="form-group">
+            <label>कारण (Reason) *</label>
+            <input type="text" name="donor_name" placeholder="दान का कारण" required>
+          </div>
+          <div class="form-group">
+            <label>तारीख (Date) *</label>
+            <input type="date" name="donated_at" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+          </div>
+          <div class="form-group">
+            <label>भुगतान (₹) *</label>
+            <input type="number" name="amount" placeholder="राशि" min="1" step="0.01" required>
+          </div>
+        </div>
+        {% else %}
         <div class="form-grid">
           <div class="form-group">
             <label>Donor Name *</label>
@@ -190,14 +209,14 @@
           </div>
           <div class="form-group">
             <label>Donation Date *</label>
-            <input type="date" name="donated_at"
-                   value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+            <input type="date" name="donated_at" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
           </div>
           <div class="form-group full-width">
             <label>Remark (Optional)</label>
             <textarea name="remark" placeholder="Any notes about this donation..."></textarea>
           </div>
         </div>
+        {% endif %}
         <div style="margin-top: 16px; display: flex; gap: 10px;">
           <button type="submit" class="btn btn-primary">
             ➕ Add Donation
@@ -240,6 +259,11 @@
           <thead>
             <tr>
               <th>#</th>
+              {% if selected_table.table_key == 'general_donations' %}
+              <th>कारण</th>
+              <th>तारीख</th>
+              <th>भुगतान</th>
+              {% else %}
               <th>Donor Name</th>
               <th>Village</th>
               <th>Contact</th>
@@ -248,6 +272,7 @@
               <th>Status</th>
               <th>Date</th>
               <th>Remark</th>
+              {% endif %}
               <th>Actions</th>
             </tr>
           </thead>
@@ -258,6 +283,13 @@
                   <td style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem;">
                     {{ d.id }}
                   </td>
+                  {% if selected_table.table_key == 'general_donations' %}
+                  <td><strong>{{ d.donor_name }}</strong></td>
+                  <td style="font-family: var(--font-mono); font-size:0.82rem;">
+                    {{ d.donated_at.strftime('%d %b %Y') if d.donated_at else '—' }}
+                  </td>
+                  <td class="amount-cell">₹{{ '{:,.0f}'.format(d.amount) }}</td>
+                  {% else %}
                   <td><strong>{{ d.donor_name }}</strong></td>
                   <td>{{ d.village }}</td>
                   <td>{{ d.donor_contact or '—' }}</td>
@@ -278,6 +310,7 @@
                   <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     {{ d.remark or '—' }}
                   </td>
+                  {% endif %}
                   <td>
                     <div class="action-btns">
                       <button class="btn btn-secondary btn-sm"
