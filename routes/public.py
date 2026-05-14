@@ -99,6 +99,10 @@ def index():
         cursor.execute("SELECT * FROM notices ORDER BY created_at DESC LIMIT 5")
         notices = cursor.fetchall()
 
+        # --- Get ledger summary for transparency ---
+        from database.db import get_ledger_summary
+        ledger_summary = get_ledger_summary()
+
         cursor.close()
         conn.close()
 
@@ -109,6 +113,7 @@ def index():
             notices=notices,
             total_amount=total_amount,
             total_records=total_records,
+            ledger_summary=ledger_summary,
             search=search,
             sort_by=sort_by,
             sort_order=sort_order,
