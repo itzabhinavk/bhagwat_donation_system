@@ -50,6 +50,56 @@
   </div>
 
   <!-- ============================================================
+       FINANCIAL TRANSPARENCY SECTION
+  ============================================================ -->
+  <div class="section">
+    <div class="ledger-summary">
+      <h3 class="section-title" style="text-align: center; margin-bottom: 20px;">📊 Financial Transparency</h3>
+      <div class="ledger-cards">
+        <div class="ledger-card">
+          <div class="ledger-label">Total Income</div>
+          <div class="ledger-value" style="color: var(--success);">
+            ₹{{ '{:,.0f}'.format(ledger_summary.total_income) }}
+          </div>
+        </div>
+        <div class="ledger-card">
+          <div class="ledger-label">Total Expenses</div>
+          <div class="ledger-value" style="color: var(--error);">
+            ₹{{ '{:,.0f}'.format(ledger_summary.total_expenses) }}
+          </div>
+        </div>
+        <div class="ledger-card">
+          <div class="ledger-label">Net Balance</div>
+          <div class="ledger-value" style="{% if ledger_summary.net_balance >= 0 %}color: var(--success);{% else %}color: var(--error);{% endif %}">
+            ₹{{ '{:,.0f}'.format(ledger_summary.net_balance) }}
+          </div>
+        </div>
+      </div>
+      <p class="ledger-note">
+        All financial transactions are tracked for complete transparency in Bhagwat Mahapuran Seva activities.
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       QR CODE SECTION
+  ============================================================ -->
+  <div class="section">
+    <div class="qr-section">
+      <div class="qr-card">
+        <h3 class="qr-title">🙏 Scan to Donate</h3>
+        <p class="qr-subtitle">Support Bhagwat Mahapuran Seva through easy digital payment</p>
+        <div class="qr-image-container">
+          <img src="{{ url_for('static', filename='images/QR.jpeg') }}"
+               alt="Payment QR Code"
+               class="qr-image">
+        </div>
+        <p class="qr-note">Scan with any UPI app (Paytm, Google Pay, PhonePe, etc.)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
        DONATION TABLE SECTION
   ============================================================ -->
   <div class="section">
