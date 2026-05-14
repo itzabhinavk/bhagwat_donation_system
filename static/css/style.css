@@ -1085,3 +1085,153 @@ textarea { resize: vertical; min-height: 80px; }
 
   .action-btns .btn span { display: none; }
 }
+
+/* ============================================================
+   QR CODE SECTION
+   ============================================================ */
+
+.qr-section {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.qr-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  backdrop-filter: blur(20px);
+}
+
+.qr-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.qr-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.qr-image-container {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-image {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: var(--transition);
+}
+
+.qr-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 20px var(--cyan-glow);
+}
+
+.qr-note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 16px;
+  font-style: italic;
+}
+
+/* Mobile responsive for QR */
+@media (max-width: 768px) {
+  .qr-card {
+    padding: 24px 20px;
+    max-width: 320px;
+  }
+
+  .qr-image {
+    width: 160px;
+    height: 160px;
+  }
+
+  .qr-title {
+    font-size: 1.2rem;
+  }
+}
+
+/* ============================================================
+   LEDGER SUMMARY SECTION
+   ============================================================ */
+
+.ledger-summary {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.ledger-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ledger-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  backdrop-filter: blur(20px);
+}
+
+.ledger-label {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.ledger-value {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-heading);
+}
+
+.ledger-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
+/* Mobile responsive for ledger */
+@media (max-width: 768px) {
+  .ledger-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ledger-card {
+    padding: 20px;
+  }
+
+  .ledger-value {
+    font-size: 1.4rem;
+  }
+}
